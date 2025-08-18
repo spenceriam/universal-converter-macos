@@ -58,3 +58,177 @@
     font-family: Inter, system-ui, sans-serif;
   }
 }
+
+@layer utilities {
+  /* Screen reader only content */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Focus visible styles for keyboard users */
+  .keyboard-user *:focus-visible {
+    @apply ring-2 ring-amber-500 ring-offset-2 ring-offset-background;
+    outline: none;
+  }
+
+  /* Enhanced focus indicators */
+  .keyboard-focus-active *:focus {
+    @apply ring-2 ring-amber-500 ring-offset-2 ring-offset-background;
+    outline: none;
+  }
+
+  /* High contrast mode styles */
+  .high-contrast {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 20%;
+    --accent: 45 100% 25%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 50%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
+  }
+
+  .high-contrast.dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 80%;
+    --accent: 45 100% 75%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 70%;
+    --destructive-foreground: 0 0% 0%;
+    --border: 0 0% 50%;
+    --input: 0 0% 10%;
+    --ring: 0 0% 100%;
+  }
+
+  /* Reduced motion styles */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Skip to content link */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: theme('colors.amber.600');
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 9999;
+    transition: top 0.3s;
+  }
+
+  .skip-link:focus {
+    top: 6px;
+  }
+
+  /* Landmark regions */
+  [role="main"],
+  [role="navigation"],
+  [role="banner"],
+  [role="contentinfo"],
+  [role="complementary"] {
+    position: relative;
+  }
+
+  /* Focus management */
+  .focus-trap {
+    position: relative;
+  }
+
+  /* Accessible button states */
+  button[aria-pressed="true"] {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  button[aria-expanded="true"] {
+    @apply bg-accent/10;
+  }
+
+  /* Live region styles */
+  [aria-live] {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* Custom font size variables */
+  :root {
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+  }
+
+  /* Responsive font sizes based on accessibility settings */
+  .text-responsive-sm { font-size: calc(var(--font-size-base) * 0.875); }
+  .text-responsive-base { font-size: var(--font-size-base); }
+  .text-responsive-lg { font-size: var(--font-size-lg); }
+  .text-responsive-xl { font-size: var(--font-size-xl); }
+
+  /* Enhanced contrast for interactive elements */
+  .high-contrast button,
+  .high-contrast input,
+  .high-contrast select,
+  .high-contrast textarea {
+    border: 2px solid currentColor !important;
+  }
+
+  .high-contrast button:focus,
+  .high-contrast input:focus,
+  .high-contrast select:focus,
+  .high-contrast textarea:focus {
+    outline: 3px solid currentColor !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Ensure sufficient color contrast for links */
+  .high-contrast a {
+    text-decoration: underline !important;
+    font-weight: bold !important;
+  }
+
+  /* Status indicators with better contrast */
+  .high-contrast [role="status"],
+  .high-contrast [role="alert"] {
+    border: 2px solid currentColor !important;
+    padding: 0.5rem !important;
+  }
+}

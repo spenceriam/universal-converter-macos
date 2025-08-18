@@ -44,13 +44,17 @@ export function ConversionContainer({
   return (
     <TooltipProvider>
       <BlurFade delay={0.1}>
-        <Card className={cn(
-          "w-full max-w-2xl mx-auto shadow-warm-lg border-warm-200/50 bg-gradient-to-br from-warm-50/50 to-amber-50/30",
-          className
-        )}>
+        <Card 
+          className={cn(
+            "w-full max-w-2xl mx-auto shadow-warm-lg border-warm-200/50 bg-gradient-to-br from-warm-50/50 to-amber-50/30",
+            className
+          )}
+          role="region"
+          aria-labelledby="converter-title"
+        >
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle id="converter-title" className="text-2xl font-bold">
                 <GradientText from="from-amber-600" to="to-orange-600">
                   {title}
                 </GradientText>
@@ -65,16 +69,18 @@ export function ConversionContainer({
                       onClick={handleCopy}
                       disabled={isLoading || !copyValue}
                       className="ml-2"
+                      aria-label={copied ? 'Copied to clipboard' : `Copy result: ${copyValue}`}
+                      aria-describedby="copy-status"
                     >
                       {copied ? (
-                        <Check className="h-4 w-4 text-emerald-600" />
+                        <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-4 w-4" aria-hidden="true" />
                       )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{copied ? 'Copied!' : 'Copy result'}</p>
+                    <p id="copy-status">{copied ? 'Copied!' : 'Copy result'}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -83,19 +89,33 @@ export function ConversionContainer({
           
           <CardContent className="space-y-6">
             {error && (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              <div 
+                className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+                role="alert"
+                aria-live="assertive"
+              >
+                <span className="sr-only">Error: </span>
                 {error}
               </div>
             )}
             
             {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
+              <div 
+                className="flex items-center justify-center py-8"
+                role="status"
+                aria-live="polite"
+                aria-label="Loading conversion"
+              >
+                <Loader2 className="h-6 w-6 animate-spin text-amber-600" aria-hidden="true" />
                 <span className="ml-2 text-muted-foreground">Loading...</span>
               </div>
             )}
             
-            {!isLoading && !error && children}
+            {!isLoading && !error && (
+              <div id="conversion-result" role="region" aria-label="Conversion form and results">
+                {children}
+              </div>
+            )}
           </CardContent>
         </Card>
       </BlurFade>

@@ -22,7 +22,7 @@ interface TimeZoneConverterProps {
   className?: string
 }
 
-export function TimeZoneConverter({
+function TimeZoneConverter({
   defaultSourceTz = "America/New_York",
   defaultTargetTz = "Europe/London", 
   onConversion,
@@ -444,3 +444,5 @@ export function TimeZoneConverter({
     </ConversionContainer>
   )
 }
+
+export default TimeZoneConverter

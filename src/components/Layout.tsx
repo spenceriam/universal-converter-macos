@@ -2,6 +2,7 @@ import * as React from "react"
 import { GridPattern } from "@/components/ui/grid-pattern"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { ThemeToggle } from "./ThemeToggle"
+import { AccessibilitySettings } from "./AccessibilitySettings"
 import { cn } from "@/lib/utils"
 
 interface LayoutProps {
@@ -27,10 +28,13 @@ export function Layout({ children, className }: LayoutProps) {
       <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 pointer-events-none" />
       
       {/* Header */}
-      <header className="relative z-10 p-4 flex justify-between items-center">
+      <header className="relative z-10 p-4 flex justify-between items-center" role="banner">
         <BlurFade delay={0.1}>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+            <div 
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center"
+              aria-hidden="true"
+            >
               <span className="text-white font-bold text-sm">UC</span>
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
@@ -40,19 +44,22 @@ export function Layout({ children, className }: LayoutProps) {
         </BlurFade>
         
         <BlurFade delay={0.2}>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <AccessibilitySettings />
+            <ThemeToggle />
+          </div>
         </BlurFade>
       </header>
       
       {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
+      <main className="relative z-10 container mx-auto px-4 py-8" role="main">
         <BlurFade delay={0.3}>
           {children}
         </BlurFade>
       </main>
       
       {/* Footer */}
-      <footer className="relative z-10 p-4 text-center text-sm text-muted-foreground">
+      <footer className="relative z-10 p-4 text-center text-sm text-muted-foreground" role="contentinfo">
         <BlurFade delay={0.4}>
           <p>Built with warm colors and modern web technologies</p>
         </BlurFade>

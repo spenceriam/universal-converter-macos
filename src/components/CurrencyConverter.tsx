@@ -18,7 +18,7 @@ interface CurrencyConverterProps {
   className?: string
 }
 
-export function CurrencyConverter({
+function CurrencyConverter({
   defaultBaseCurrency = 'USD',
   onConversion,
   className
@@ -433,3 +433,5 @@ export function CurrencyConverter({
     </TooltipProvider>
   )
 }
+
+export default CurrencyConverter

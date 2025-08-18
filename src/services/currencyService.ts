@@ -8,6 +8,8 @@ import {
   AppError,
   SUPPORTED_CURRENCIES
 } from '../types'
+import { cacheManager } from './cacheManager'
+import { debounce, PerformanceMonitor } from '../utils/performance'
 
 /**
  * Currency service with Frankfurter API integration
@@ -15,7 +17,6 @@ import {
  */
 export class CurrencyServiceImpl implements CurrencyService {
   private readonly API_BASE_URL = 'https://api.frankfurter.app'
-  private readonly CACHE_KEY = 'currency_exchange_rates'
   private readonly CACHE_DURATION = 60 * 60 * 1000 // 1 hour in milliseconds
   private readonly MAX_STALE_DURATION = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
   private readonly RETRY_ATTEMPTS = 3
@@ -27,7 +28,33 @@ export class CurrencyServiceImpl implements CurrencyService {
 
   constructor() {
     this.initializeOnlineStatus()
-    this.loadCachedRates()
+    // Load cached rates asynchronously
+    this.loadCachedRates().catch(error => {
+      console.warn('Failed to initialize cached rates:', error)
+    })
+    
+    // Create debounced version of rate fetching
+    this.debouncedFetchRates = debounce(this.internalFetchRates.bind(this), 500)
+  }
+
+  // Debounced rate fetching to prevent excessive API calls
+  private debouncedFetchRates: (baseCurrency: string) => void
+  private pendingFetches = new Map<string, Promise<ExchangeRates>>()
+
+  /**
+   * Internal method for fetching rates with performance monitoring
+   */
+  private async internalFetchRates(baseCurrency: string): Promise<void> {
+    const endMeasurement = PerformanceMonitor.startMeasurement('currency-api-fetch')
+    
+    try {
+      const freshRates = await this.fetchExchangeRatesWithRetry(baseCurrency)
+      await cacheManager.cacheExchangeRates(freshRates)
+      this.cachedRates = freshRates
+      this.lastFetchTime = Date.now()
+    } finally {
+      endMeasurement()
+    }
   }
 
   /**
@@ -55,7 +82,7 @@ export class CurrencyServiceImpl implements CurrencyService {
     if (this.isOnline) {
       try {
         const freshRates = await this.fetchExchangeRatesWithRetry(baseCurrency)
-        await this.cacheRates(freshRates)
+        await cacheManager.cacheExchangeRates(freshRates)
         this.cachedRates = freshRates
         this.lastFetchTime = Date.now()
         return freshRates
@@ -285,43 +312,17 @@ export class CurrencyServiceImpl implements CurrencyService {
   }
 
   /**
-   * Cache exchange rates in localStorage
+   * Load cached exchange rates using cache manager
    */
-  private async cacheRates(rates: ExchangeRates): Promise<void> {
+  private async loadCachedRates(): Promise<void> {
     try {
-      const cacheData = {
-        data: rates,
-        timestamp: Date.now(),
-        expiresAt: Date.now() + this.CACHE_DURATION,
-        version: '1.0'
-      }
-      
-      localStorage.setItem(this.CACHE_KEY, JSON.stringify(cacheData))
-    } catch (error) {
-      console.warn('Failed to cache exchange rates:', error)
-      // Don't throw - caching failure shouldn't break the app
-    }
-  }
-
-  /**
-   * Load cached exchange rates from localStorage
-   */
-  private loadCachedRates(): void {
-    try {
-      const cached = localStorage.getItem(this.CACHE_KEY)
-      if (!cached) return
-
-      const cacheData = JSON.parse(cached)
-      
-      // Validate cache structure
-      if (cacheData.data && cacheData.timestamp && cacheData.version === '1.0') {
-        this.cachedRates = cacheData.data
-        this.lastFetchTime = cacheData.timestamp
+      const cachedRates = await cacheManager.getCachedExchangeRates()
+      if (cachedRates) {
+        this.cachedRates = cachedRates
+        this.lastFetchTime = cachedRates.timestamp
       }
     } catch (error) {
       console.warn('Failed to load cached exchange rates:', error)
-      // Clear corrupted cache
-      localStorage.removeItem(this.CACHE_KEY)
     }
   }
 

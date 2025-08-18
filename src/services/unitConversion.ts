@@ -1,4 +1,5 @@
 import { Unit, UnitCategory, ConversionResult, ConversionService } from '../types'
+import { memoize, PerformanceMonitor } from '../utils/performance'
 
 /**
  * Comprehensive unit conversion engine with high precision calculations
@@ -14,8 +15,20 @@ export class UnitConversionEngine implements ConversionService {
 
   /**
    * Convert a value from one unit to another with high precision
+   * Memoized for performance optimization
    */
   async convert(value: number, fromUnitId: string, toUnitId: string): Promise<ConversionResult> {
+    const endMeasurement = PerformanceMonitor.startMeasurement('unit-conversion')
+    
+    try {
+      return this.memoizedConvert(value, fromUnitId, toUnitId)
+    } finally {
+      endMeasurement()
+    }
+  }
+
+  private memoizedConvert = memoize(
+    (value: number, fromUnitId: string, toUnitId: string): ConversionResult => {
     if (!this.validateInput(value.toString())) {
       throw new Error('Invalid input value')
     }
@@ -52,7 +65,10 @@ export class UnitConversionEngine implements ConversionService {
       precision: this.calculatePrecision(result),
       timestamp: Date.now()
     }
-  }
+  },
+  (value: number, fromUnitId: string, toUnitId: string) => `${value}-${fromUnitId}-${toUnitId}`,
+  { maxSize: 1000, ttl: 10 * 60 * 1000 } // 10 minutes cache
+  )
 
   /**
    * Get all supported units for a category

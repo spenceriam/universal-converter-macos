@@ -20,6 +20,7 @@ import {
   getPopularUnits, 
   getUnitDisplayText 
 } from "@/utils/unitFilters"
+import { useScreenReader } from "@/hooks/useAccessibility"
 import type { 
   Unit, 
   UnitCategory, 
@@ -40,12 +41,13 @@ interface UnitConverterState {
   targetUnitSearch: string
 }
 
-export function UnitConverter({ 
+function UnitConverter({ 
   initialCategory = 'length',
   onConversion,
   className,
   ...props 
 }: UnitConverterProps) {
+  const { announce } = useScreenReader()
   const [state, setState] = React.useState<UnitConverterState>({
     categories: [],
     selectedCategory: initialCategory,
@@ -109,6 +111,11 @@ export function UnitConverter({
           isLoading: false, 
           error: null 
         }))
+        
+        // Announce conversion result
+        if (state.sourceUnit && state.targetUnit) {
+          announce(`Converted ${numericValue} ${state.sourceUnit.name} to ${result.formattedValue} ${state.targetUnit.name}`)
+        }
         
         onConversion?.(result)
       } catch (error) {
@@ -202,22 +209,46 @@ export function UnitConverter({
       <div className="space-y-6">
         {/* Category Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
+          <label 
+            htmlFor="category-select" 
+            className="text-sm font-medium text-foreground"
+          >
             Category
           </label>
-          <Select value={state.selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full focus:ring-amber-500 focus:border-amber-500">
+          <Select 
+            value={state.selectedCategory} 
+            onValueChange={handleCategoryChange}
+          >
+            <SelectTrigger 
+              id="category-select"
+              className="w-full focus:ring-amber-500 focus:border-amber-500"
+              aria-label="Select unit category"
+            >
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
               {state.categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
+                <SelectItem 
+                  key={category.id} 
+                  value={category.id}
+                  aria-describedby={`category-${category.id}-info`}
+                >
                   <div className="flex items-center space-x-2">
                     <span>{category.name}</span>
-                    <Badge variant="warm" className="text-xs">
+                    <Badge 
+                      variant="warm" 
+                      className="text-xs"
+                      aria-label={`${category.units.length} units available`}
+                    >
                       {category.units.length}
                     </Badge>
                   </div>
+                  <span 
+                    id={`category-${category.id}-info`} 
+                    className="sr-only"
+                  >
+                    {category.units.length} units available in {category.name} category
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -228,7 +259,10 @@ export function UnitConverter({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           {/* Source Unit */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+            <label 
+              htmlFor="source-unit-select" 
+              className="text-sm font-medium text-foreground"
+            >
               From
             </label>
             <div className="space-y-2">
@@ -236,12 +270,20 @@ export function UnitConverter({
                 value={state.sourceUnit?.id || ''} 
                 onValueChange={(value) => handleUnitChange('source', value)}
               >
-                <SelectTrigger className="w-full focus:ring-amber-500 focus:border-amber-500">
+                <SelectTrigger 
+                  id="source-unit-select"
+                  className="w-full focus:ring-amber-500 focus:border-amber-500"
+                  aria-label="Select source unit"
+                >
                   <SelectValue placeholder="Select source unit">
                     {state.sourceUnit && (
                       <div className="flex items-center space-x-2">
                         <span>{state.sourceUnit.name}</span>
-                        <Badge variant="outline" className="text-xs border-amber-200">
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs border-amber-200"
+                          aria-label={`Symbol: ${state.sourceUnit.symbol}`}
+                        >
                           {state.sourceUnit.symbol}
                         </Badge>
                       </div>
@@ -251,7 +293,10 @@ export function UnitConverter({
                 <SelectContent>
                   <div className="p-2">
                     <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Search 
+                        className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" 
+                        aria-hidden="true"
+                      />
                       <Input
                         placeholder="Search units..."
                         value={state.sourceUnitSearch}
@@ -260,29 +305,50 @@ export function UnitConverter({
                           sourceUnitSearch: e.target.value 
                         }))}
                         className="pl-8 h-9 focus:ring-amber-500"
+                        aria-label="Search source units"
                       />
                     </div>
                   </div>
                   {getFilteredUnits(state.sourceUnitSearch).map((unit) => (
-                    <SelectItem key={unit.id} value={unit.id}>
+                    <SelectItem 
+                      key={unit.id} 
+                      value={unit.id}
+                      aria-describedby={`source-unit-${unit.id}-info`}
+                    >
                       <div className="flex items-center justify-between w-full">
                         <span>{unit.name}</span>
-                        <Badge variant="outline" className="ml-2 text-xs border-amber-200">
+                        <Badge 
+                          variant="outline" 
+                          className="ml-2 text-xs border-amber-200"
+                          aria-label={`Symbol: ${unit.symbol}`}
+                        >
                           {unit.symbol}
                         </Badge>
                       </div>
+                      <span 
+                        id={`source-unit-${unit.id}-info`} 
+                        className="sr-only"
+                      >
+                        {unit.name}, symbol {unit.symbol}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               
               <Input
+                id="conversion-input"
                 type="text"
                 value={state.inputValue}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder="Enter value"
                 className="focus:ring-amber-500 focus:border-amber-500"
+                aria-label={`Enter value to convert${state.sourceUnit ? ` in ${state.sourceUnit.name}` : ''}`}
+                aria-describedby="input-help"
               />
+              <div id="input-help" className="sr-only">
+                Enter a numeric value to convert between units
+              </div>
             </div>
           </div>
 
@@ -294,14 +360,18 @@ export function UnitConverter({
               onClick={handleSwapUnits}
               disabled={!state.sourceUnit || !state.targetUnit}
               className="hover:bg-amber-50 hover:border-amber-300 focus:ring-amber-500"
+              aria-label={`Swap units${state.sourceUnit && state.targetUnit ? `: ${state.sourceUnit.name} and ${state.targetUnit.name}` : ''}`}
             >
-              <ArrowRightLeft className="h-4 w-4" />
+              <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
           {/* Target Unit */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+            <label 
+              htmlFor="target-unit-select" 
+              className="text-sm font-medium text-foreground"
+            >
               To
             </label>
             <div className="space-y-2">
@@ -309,12 +379,20 @@ export function UnitConverter({
                 value={state.targetUnit?.id || ''} 
                 onValueChange={(value) => handleUnitChange('target', value)}
               >
-                <SelectTrigger className="w-full focus:ring-amber-500 focus:border-amber-500">
+                <SelectTrigger 
+                  id="target-unit-select"
+                  className="w-full focus:ring-amber-500 focus:border-amber-500"
+                  aria-label="Select target unit"
+                >
                   <SelectValue placeholder="Select target unit">
                     {state.targetUnit && (
                       <div className="flex items-center space-x-2">
                         <span>{state.targetUnit.name}</span>
-                        <Badge variant="outline" className="text-xs border-amber-200">
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs border-amber-200"
+                          aria-label={`Symbol: ${state.targetUnit.symbol}`}
+                        >
                           {state.targetUnit.symbol}
                         </Badge>
                       </div>
@@ -324,7 +402,10 @@ export function UnitConverter({
                 <SelectContent>
                   <div className="p-2">
                     <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Search 
+                        className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" 
+                        aria-hidden="true"
+                      />
                       <Input
                         placeholder="Search units..."
                         value={state.targetUnitSearch}
@@ -333,17 +414,32 @@ export function UnitConverter({
                           targetUnitSearch: e.target.value 
                         }))}
                         className="pl-8 h-9 focus:ring-amber-500"
+                        aria-label="Search target units"
                       />
                     </div>
                   </div>
                   {getFilteredUnits(state.targetUnitSearch).map((unit) => (
-                    <SelectItem key={unit.id} value={unit.id}>
+                    <SelectItem 
+                      key={unit.id} 
+                      value={unit.id}
+                      aria-describedby={`target-unit-${unit.id}-info`}
+                    >
                       <div className="flex items-center justify-between w-full">
                         <span>{unit.name}</span>
-                        <Badge variant="outline" className="ml-2 text-xs border-amber-200">
+                        <Badge 
+                          variant="outline" 
+                          className="ml-2 text-xs border-amber-200"
+                          aria-label={`Symbol: ${unit.symbol}`}
+                        >
                           {unit.symbol}
                         </Badge>
                       </div>
+                      <span 
+                        id={`target-unit-${unit.id}-info`} 
+                        className="sr-only"
+                      >
+                        {unit.name}, symbol {unit.symbol}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -352,15 +448,19 @@ export function UnitConverter({
               {/* Result Display */}
               <div className="relative">
                 <Input
+                  id="conversion-result"
                   value={state.result ? state.result.formattedValue : ''}
                   readOnly
                   placeholder="Result will appear here"
                   className="bg-amber-50/50 border-amber-200 focus:ring-amber-500 pr-16"
+                  aria-label={`Conversion result${state.result ? `: ${state.result.formattedValue} ${state.targetUnit?.symbol || ''}` : ''}`}
+                  aria-live="polite"
                 />
                 {state.targetUnit && (
                   <Badge 
                     variant="warm" 
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-xs"
+                    aria-hidden="true"
                   >
                     {state.targetUnit.symbol}
                   </Badge>
@@ -372,21 +472,27 @@ export function UnitConverter({
 
         {/* Result Summary */}
         {state.result && state.sourceUnit && state.targetUnit && (
-          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
+          <div 
+            className="p-4 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200"
+            role="region"
+            aria-labelledby="result-summary"
+            aria-live="polite"
+          >
             <div className="flex items-center space-x-2 text-sm text-amber-800">
-              <Calculator className="h-4 w-4" />
-              <span>
-                {state.inputValue} {state.sourceUnit.symbol} = 
+              <Calculator className="h-4 w-4" aria-hidden="true" />
+              <span id="result-summary">
+                {state.inputValue} {state.sourceUnit.symbol} equals
               </span>
               <AnimatedNumber 
                 value={state.result.value} 
                 precision={state.result.precision}
                 className="font-semibold"
+                aria-label={`${state.result.formattedValue} ${state.targetUnit.symbol}`}
               />
               <span>{state.targetUnit.symbol}</span>
             </div>
             {state.result.precision > 6 && (
-              <div className="mt-1 text-xs text-amber-600">
+              <div className="mt-1 text-xs text-amber-600" role="note">
                 Result rounded to {state.result.precision} decimal places
               </div>
             )}
@@ -410,3 +516,5 @@ export function UnitConverter({
     </ConversionContainer>
   )
 }
+export 
+default UnitConverter

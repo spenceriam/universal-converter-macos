@@ -50,7 +50,11 @@ export function ConversionTypeNav({ className }: ConversionTypeNavProps) {
   return (
     <div className={cn("w-full", className)}>
       <BlurFade delay={0.2}>
-        <div className="flex flex-col sm:flex-row gap-3 p-1 bg-warm-100/50 dark:bg-warm-800/30 rounded-xl border border-warm-200/50 dark:border-warm-700/50 backdrop-blur-sm">
+        <div 
+          className="flex flex-col sm:flex-row gap-3 p-1 bg-warm-100/50 dark:bg-warm-800/30 rounded-xl border border-warm-200/50 dark:border-warm-700/50 backdrop-blur-sm"
+          role="tablist"
+          aria-label="Conversion type selection"
+        >
           {conversionTypes.map((option, index) => {
             const Icon = option.icon
             const isActive = currentType === option.type
@@ -64,18 +68,26 @@ export function ConversionTypeNav({ className }: ConversionTypeNavProps) {
                     size="lg"
                     onClick={() => setConversionType(option.type)}
                     disabled={isDisabled}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`${option.type}-converter-panel`}
+                    aria-describedby={`${option.type}-description`}
+                    aria-label={`${option.label} converter${isDisabled ? ' (offline)' : ''}`}
                     className={cn(
                       "w-full h-auto p-4 flex flex-col items-center gap-2 transition-all duration-200",
-                      "hover:scale-105 hover:shadow-warm",
+                      "hover:scale-105 hover:shadow-warm focus:scale-105 focus:shadow-warm",
                       isActive && "shadow-warm ring-2 ring-amber-500/20",
                       isDisabled && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <Icon className={cn(
-                        "h-5 w-5",
-                        isActive ? "text-white" : "text-amber-600 dark:text-amber-400"
-                      )} />
+                      <Icon 
+                        className={cn(
+                          "h-5 w-5",
+                          isActive ? "text-white" : "text-amber-600 dark:text-amber-400"
+                        )}
+                        aria-hidden="true"
+                      />
                       <span className={cn(
                         "font-semibold",
                         isActive ? "text-white" : "text-warm-900 dark:text-warm-100"
@@ -83,22 +95,28 @@ export function ConversionTypeNav({ className }: ConversionTypeNavProps) {
                         {option.label}
                       </span>
                       {isDisabled && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs" aria-label="Requires internet connection">
                           Offline
                         </Badge>
                       )}
                     </div>
-                    <p className={cn(
-                      "text-xs text-center leading-tight",
-                      isActive ? "text-white/90" : "text-warm-600 dark:text-warm-400"
-                    )}>
+                    <p 
+                      id={`${option.type}-description`}
+                      className={cn(
+                        "text-xs text-center leading-tight",
+                        isActive ? "text-white/90" : "text-warm-600 dark:text-warm-400"
+                      )}
+                    >
                       {option.description}
                     </p>
                   </Button>
                   
                   {/* Active indicator */}
                   {isActive && (
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full" />
+                    <div 
+                      className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
               </BlurFade>

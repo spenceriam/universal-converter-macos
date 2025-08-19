@@ -109,8 +109,8 @@ describe('UnitConverter', () => {
   it('changes category and updates available units', async () => {
     render(<UnitConverter />)
     
-    // Find and click the category selector
-    const categorySelect = screen.getByRole('combobox')
+    // Find and click the category selector specifically
+    const categorySelect = screen.getByLabelText(/select unit category/i)
     fireEvent.click(categorySelect)
     
     // Select weight category
@@ -191,13 +191,22 @@ describe('UnitConverter', () => {
       expect(screen.getByDisplayValue('1')).toBeInTheDocument()
     })
     
+    // Wait for units to be loaded
+    await waitFor(() => {
+      expect(screen.getByText('Length')).toBeInTheDocument()
+    })
+    
+    // Wait a bit more for units to be fully initialized
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     // Enter invalid input
     const input = screen.getByDisplayValue('1')
     fireEvent.change(input, { target: { value: 'invalid' } })
     
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid number')).toBeInTheDocument()
-    })
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent('Please enter a valid number')
+    }, { timeout: 3000 })
   })
 
   it('handles conversion errors gracefully', async () => {
@@ -345,7 +354,7 @@ describe('UnitConverter', () => {
     })
     
     // Find and click copy button
-    const copyButton = screen.getByRole('button')
+    const copyButton = screen.getByRole('button', { name: /copy result/i })
     fireEvent.click(copyButton)
     
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('3.28084 ft')

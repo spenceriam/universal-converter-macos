@@ -3,19 +3,24 @@ import { describe, it, expect, vi } from 'vitest'
 import { SkipLinks } from '../SkipLinks'
 
 // Mock scrollIntoView
+const mockScrollIntoView = vi.fn()
 Object.defineProperty(Element.prototype, 'scrollIntoView', {
-  value: vi.fn(),
+  value: mockScrollIntoView,
   writable: true
 })
 
 describe('SkipLinks', () => {
   beforeEach(() => {
+    // Clear mock calls
+    mockScrollIntoView.mockClear()
+    
     // Clear any existing elements
     document.body.innerHTML = ''
     
     // Add target elements to the DOM
     const mainContent = document.createElement('main')
     mainContent.id = 'main-content'
+    mainContent.setAttribute('tabindex', '-1') // Make it focusable
     document.body.appendChild(mainContent)
     
     const conversionNav = document.createElement('nav')
@@ -62,7 +67,7 @@ describe('SkipLinks', () => {
     render(<SkipLinks />)
     
     const mainContent = document.getElementById('main-content')!
-    const skipLink = screen.getByText('Skip to main content')
+    const skipLink = screen.getByRole('link', { name: 'Skip to main content' })
     
     fireEvent.click(skipLink)
     
@@ -73,11 +78,16 @@ describe('SkipLinks', () => {
     render(<SkipLinks />)
     
     const mainContent = document.getElementById('main-content')!
-    const skipLink = screen.getByText('Skip to main content')
+    expect(mainContent).toBeInTheDocument() // Ensure element exists
+    
+    // Spy on the specific element's scrollIntoView method
+    const elementScrollSpy = vi.spyOn(mainContent, 'scrollIntoView')
+    
+    const skipLink = screen.getByRole('link', { name: 'Skip to main content' })
     
     fireEvent.click(skipLink)
     
-    expect(mainContent.scrollIntoView).toHaveBeenCalledWith({
+    expect(elementScrollSpy).toHaveBeenCalledWith({
       behavior: 'smooth',
       block: 'start'
     })

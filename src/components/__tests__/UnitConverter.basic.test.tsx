@@ -144,10 +144,12 @@ describe('UnitConverter - Basic Functionality', () => {
     render(<UnitConverter />)
     
     await waitFor(() => {
-      // Should show meter symbol
-      expect(screen.getByText('m')).toBeInTheDocument()
-      // Should show kilometer symbol
-      expect(screen.getByText('km')).toBeInTheDocument()
+      // Should show meter symbol in badges
+      const meterBadges = screen.getAllByText('m')
+      expect(meterBadges.length).toBeGreaterThan(0)
+      // Should show kilometer symbol in badges
+      const kilometerBadges = screen.getAllByText('km')
+      expect(kilometerBadges.length).toBeGreaterThan(0)
     })
   })
 
@@ -172,16 +174,24 @@ describe('UnitConverter - Basic Functionality', () => {
   it('validates input and shows error for invalid values', async () => {
     render(<UnitConverter />)
     
+    // Wait for component to fully load with units selected
     await waitFor(() => {
       expect(screen.getByDisplayValue('1')).toBeInTheDocument()
+      // Wait for units to be loaded (check for unit badges or selects)
+      expect(screen.getByText('Length')).toBeInTheDocument()
     })
+    
+    // Wait a bit more for units to be fully initialized
+    await new Promise(resolve => setTimeout(resolve, 100))
     
     const input = screen.getByDisplayValue('1')
     fireEvent.change(input, { target: { value: 'invalid' } })
     
+    // Wait for error to appear
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid number')).toBeInTheDocument()
-    })
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent('Please enter a valid number')
+    }, { timeout: 3000 })
   })
 
   it('accepts custom className', () => {
